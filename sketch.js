@@ -85,10 +85,10 @@ class QuadTree
     var sw_boundary = new Boundary(x, y_mid, x_mid, h);
     var se_boundary = new Boundary(x_mid, y_mid, w, h);
     
-    this.nw = new QuadTree(nw_boundary, 4);
-    this.ne = new QuadTree(ne_boundary, 4);
-    this.sw = new QuadTree(sw_boundary, 4);
-    this.se = new QuadTree(se_boundary, 4);
+    this.nw = new QuadTree(nw_boundary, this.capacity);
+    this.ne = new QuadTree(ne_boundary, this.capacity);
+    this.sw = new QuadTree(sw_boundary, this.capacity);
+    this.se = new QuadTree(se_boundary, this.capacity);
     
     for (var i = 0; i < this.points.length; i++) {
       if (!this.nw.insertPoint(this.points[i])) {
