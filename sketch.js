@@ -171,4 +171,11 @@ function draw() {
     qt.showBoundary();
     qt.showAndMovePoints();
 
+    stroke(0);
+    fill(0);
+    rect(27, 20, 17, 12);
+   
+    noStroke(); 
+    fill(255);
+    text(Math.floor(frameRate()), 30, 30);
 }
