@@ -150,7 +150,7 @@ function setup() {
     background(40);
     frameRate(40);
 
-    for (var i = 0; i < 351; i++) {
+    for (var i = 0; i < 851; i++) {
         points.push(new Point(Math.floor(random(0, window_size_x)), Math.floor(random(0, window_size_y))));
     }
 }
@@ -161,7 +161,7 @@ function draw() {
     var boundary = new Boundary(0, 0, window_size_x, window_size_y);
     var qt = new QuadTree(boundary, 4);
 
-    for (var i = 0; i < 351; i++) {
+    for (var i = 0; i < points.length; i++) {
         qt.insertPoint(points[i]);
     }
 
