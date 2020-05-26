@@ -157,6 +157,9 @@ function setup() {
 
 function draw() {
     background(40);
+    
+    strokeWeight(1);
+    text(Math.floor(frameRate()), 30, 30);
 
     var boundary = new Boundary(0, 0, window_size_x, window_size_y);
     var qt = new QuadTree(boundary, 4);
