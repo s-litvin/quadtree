@@ -150,7 +150,7 @@ function setup() {
     background(40);
     frameRate(40);
 
-    for (var i = 0; i < 851; i++) {
+    for (var i = 0; i < 1500; i++) {
         points.push(new Point(Math.floor(random(0, window_size_x)), Math.floor(random(0, window_size_y))));
     }
 }
