@@ -8,13 +8,13 @@ class Point {
     this.x = x;
     this.y = y;
     this.velocity = random(0.2, 2);
-    this.x_direction = random(-1, 1) > 0 ? 1 : -1;
-    this.y_direction = random(-1, 1) > 0 ? 1 : -1;
+    this.x_direction = Math.random() > 0.5 ? -1 : 1;
+    this.y_direction = Math.random() > 0.5 ? -1 : 1;
   }
 
   show(color = 'white') {
     stroke(color);
-    // strokeWeight(2);
+    strokeWeight(4);
     point(this.x, this.y);
   }
 }
@@ -37,14 +37,9 @@ class Boundary {
 }
 
 class QuadTree {
-  constructor(boundary, capacity, selectedBoundary) {
+  constructor(boundary, capacity) {
     this.boundary = boundary;
     this.capacity = capacity;
-
-    this.selectedBoundary = null;
-    if (selectedBoundary != null && this.checkBoundaryIntersection(boundary, selectedBoundary)) {
-      this.selectedBoundary = selectedBoundary;
-    }
 
     this.nw = null;
     this.ne = null;
@@ -54,23 +49,13 @@ class QuadTree {
     this.points = [];
   }
 
-  checkBoundaryIntersection(b1, b2) {
-
-    if (b1.x >= b2.w || b2.x >= b1.w || b1.y >= b2.h || b2.y >= b1.h) {
-      return false;
-    }
-
-    return true;
-  }
-
-  checkPointIntersectionWithBoundary(x, y, boundary) {
-    return (x >= boundary.x && x <= boundary.w && y >= boundary.y && y <= boundary.h);
-  }
-
   insertPoint(point_index) {
     var b = this.boundary;
 
-    if (b.x > points[point_index].x || b.w < points[point_index].x || b.y > points[point_index].y || b.h < points[point_index].y) {
+    if (b.x > points[point_index].x || 
+        b.w < points[point_index].x || 
+        b.y > points[point_index].y || 
+        b.h < points[point_index].y) {
       return false;
     }
 
@@ -83,8 +68,12 @@ class QuadTree {
         this.subdivide();
       }
 
-      return this.nw.insertPoint(point_index) || this.ne.insertPoint(point_index) || this.sw.insertPoint(point_index) || this.se.insertPoint(point_index);
+      return this.nw.insertPoint(point_index) || 
+        this.ne.insertPoint(point_index) || 
+        this.sw.insertPoint(point_index) || 
+        this.se.insertPoint(point_index);
     }
+    
     return false;
   }
 
@@ -102,12 +91,10 @@ class QuadTree {
     var sw_boundary = new Boundary(x, y_mid, x_mid, h);
     var se_boundary = new Boundary(x_mid, y_mid, w, h);
 
-    this.nw = new QuadTree(nw_boundary, this.capacity, this.selectedBoundary);
-    this.ne = new QuadTree(ne_boundary, this.capacity, this.selectedBoundary);
-    this.sw = new QuadTree(sw_boundary, this.capacity, this.selectedBoundary);
-    this.se = new QuadTree(se_boundary, this.capacity, this.selectedBoundary);
-
-    this.selectedBoundary = null;
+    this.nw = new QuadTree(nw_boundary, this.capacity);
+    this.ne = new QuadTree(ne_boundary, this.capacity);
+    this.sw = new QuadTree(sw_boundary, this.capacity);
+    this.se = new QuadTree(se_boundary, this.capacity);
 
     for (var i = 0; i < this.points.length; i++) {
       this.nw.insertPoint(this.points[i]) ||
@@ -119,20 +106,110 @@ class QuadTree {
     this.points = [];
   }
 
-  showAndMovePoints() {
-    if (this.points.length > 0) {
-      for (var i = 0; i < this.points.length; i++) {
-        var _point = points[this.points[i]];
+  showBoundary() {
 
-        if (this.selectedBoundary == null) {
-          _point.show('white');
-        } else {
-          if (this.checkPointIntersectionWithBoundary(_point.x, _point.y, this.selectedBoundary)) {
-            _point.show('orange');
-          } else {
-            _point.show('white');
+    if (this.nw != null) {
+      this.nw.showBoundary();
+      this.ne.showBoundary();
+      this.sw.showBoundary();
+      this.se.showBoundary();
+    } else {
+      this.boundary.show();
+    }
+  }
+  
+  selectPointsForCircleArea(x, y, radius) {
+    
+    if (this.nw != null) {
+      return this.nw.selectPointsForCircleArea(x, y, radius).concat(
+        this.ne.selectPointsForCircleArea(x, y, radius),
+        this.sw.selectPointsForCircleArea(x, y, radius),
+        this.se.selectPointsForCircleArea(x, y, radius)
+      );
+    } else {
+      if (this.checkIntersectionWithCircle(x, y, radius, this.boundary)) {    
+        var return_array = [];
+        for (var i = 0; i < this.points.length; i++) {
+          if (Math.sqrt(Math.pow(points[this.points[i]].x - x, 2) + Math.pow(points[this.points[i]].y - y, 2)) <= radius) {
+            return_array.push(this.points[i]);
           }
         }
+        return return_array;   
+      } else {
+        return [];
+      }
+    }
+  }
+  
+  checkIntersectionWithCircle(x, y, radius, boundary) {
+    if (boundary.w < x - radius || boundary.x > x + radius || boundary.y > y + radius || boundary.h < y - radius) {
+      return false;
+    }
+
+    return true;
+  }
+
+}
+
+var boundary;
+var selected_boundary;
+
+function setup() {
+  createCanvas(600, 600);
+  background(40);
+  frameRate(40);
+
+  slider = createSlider(2, 2000, 50, 5);
+  slider.position(10, 50);
+  slider.style('width', '80px');
+
+  boundary = new Boundary(0, 0, window_size_x, window_size_y);
+
+  for (var i = 0; i < 2000; i++) {
+    points.push(new Point(Math.floor(random(0, window_size_x)), Math.floor(random(0, window_size_y))));
+  }
+}
+
+function draw() {
+  background(40);
+
+  var qt = new QuadTree(boundary, 4);
+
+  qt.showBoundary();
+  for (var i = 0; i < slider.value(); i++) {
+    qt.insertPoint(i);
+  }
+
+  qt.showBoundary();
+  showAndMovePoints(qt);
+  
+  // frameRate(0);
+  noStroke();
+  fill(255);
+  text("framerate: " + Math.floor(frameRate()), 10, 20);
+  text("particles count: " + slider.value(), 10, 40);
+}
+
+  function showAndMovePoints(qt) {
+    
+    var _old_points = points;
+  
+      for (var i = 0; i < slider.value(); i++) {
+        
+        var _point = points[i];
+        var pointsSelected = qt.selectPointsForCircleArea(_point.x, _point.y, 4);
+        
+        if (pointsSelected.length > 1) {
+          _point.show('orange');
+          _point.x_direction = Math.random() > 0.5 ? -1: 1;
+          _point.y_direction = Math.random() > 0.5 ? -1: 1;
+          _point.x += Math.random() * 1.3;
+          _point.y += Math.random() * 1.3;
+        } else {
+          _point.show('white');
+        }
+        
+        var _point = points[i];
 
         var new_x = _point.x + (_point.velocity * _point.x_direction);
         var new_y = _point.y + (_point.velocity * _point.y_direction);
@@ -151,69 +228,7 @@ class QuadTree {
           _point.y = new_y;
         }
 
-        points[this.points[i]] = _point;
+        points[i] = _point;
       }
-    } else if (this.nw != null) {
-      this.nw.showAndMovePoints();
-      this.ne.showAndMovePoints();
-      this.sw.showAndMovePoints();
-      this.se.showAndMovePoints();
-    }
+
   }
-
-  showBoundary() {
-    this.boundary.show();
-
-    if (this.nw != null) {
-      this.nw.showBoundary();
-      this.ne.showBoundary();
-      this.sw.showBoundary();
-      this.se.showBoundary();
-    }
-  }
-
-}
-
-var boundary;
-var selected_boundary;
-
-function setup() {
-  createCanvas(600, 600);
-  background(40);
-  frameRate(40);
-
-
-  slider = createSlider(2, 2000, 50, 5);
-  slider.position(10, 50);
-  slider.style('width', '80px');
-
-  boundary = new Boundary(0, 0, window_size_x, window_size_y);
-  selected_boundary = new Boundary(214, 73, window_size_x / 2.11, window_size_y / 1.67);
-
-  for (var i = 0; i < 2000; i++) {
-    points.push(new Point(Math.floor(random(0, window_size_x)), Math.floor(random(0, window_size_y))));
-  }
-}
-
-function draw() {
-  background(40);
-
-  var qt = new QuadTree(boundary, 4, selected_boundary);
-
-  qt.showBoundary();
-  for (var i = 0; i < slider.value(); i++) {
-    // qt.insertPoint(points[i]);
-    qt.insertPoint(i);
-  }
-
-  qt.showBoundary();
-  qt.showAndMovePoints();
-
-  selected_boundary.show('green');
-
-  noStroke();
-  fill(255);
-  text("framerate: " + Math.floor(frameRate()), 10, 20);
-  text("particles count: " + slider.value(), 10, 40);
-
-}
