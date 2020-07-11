@@ -14,7 +14,7 @@ class Point {
 
   show(color = 'white') {
     stroke(color);
-    strokeWeight(4);
+    strokeWeight(10);
     point(this.x, this.y);
   }
 }
@@ -197,7 +197,7 @@ function draw() {
       for (var i = 0; i < slider.value(); i++) {
         
         var _point = points[i];
-        var pointsSelected = qt.selectPointsForCircleArea(_point.x, _point.y, 4);
+        var pointsSelected = qt.selectPointsForCircleArea(_point.x, _point.y, 6);
         
         if (pointsSelected.length > 1) {
           _point.show('orange');
