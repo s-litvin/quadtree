@@ -1,21 +1,50 @@
 var window_size_x = 600;
 var window_size_y = 600;
+
+var points_count_limit = 2000;
 var points = [];
+
+var gravity;
 
 class Point {
 
   constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.velocity = random(0.2, 2);
-    this.x_direction = Math.random() > 0.5 ? -1 : 1;
-    this.y_direction = Math.random() > 0.5 ? -1 : 1;
+    this.position = createVector(x, y);
+    this.velocity = createVector(random(-2, 2), random(-2, 2));
+    this.acceleration = createVector(0, 0);
+    this.mass = random(3, 13);
+    this.modified = false;
+  }
+
+  applyForce(forceVector) {
+    var f = p5.Vector.div(forceVector, this.mass);
+    this.acceleration.add(f);
+  }
+
+  move() {
+  
+    this.applyForce(gravity);
+    
+    this.position.add(this.velocity.add(this.acceleration));
+
+    if (this.position.x >= window_size_x - 3 || this.position.x <= 3) {
+      this.velocity.x *= -1;
+    }
+    if (this.position.y >= window_size_y - 3 || this.position.y <= 3) {
+      this.velocity.y *= -1;
+    }
+    
+    var speed = this.velocity.mag();
+    if (speed > 4) {
+      this.velocity.normalize();
+      this.velocity.mult(4);
+    }
   }
 
   show(color = 'white') {
     stroke(color);
-    strokeWeight(10);
-    point(this.x, this.y);
+    strokeWeight(this.mass);
+    point(this.position.x, this.position.y);
   }
 }
 
@@ -52,15 +81,16 @@ class QuadTree {
   insertPoint(point_index) {
     var b = this.boundary;
 
-    if (b.x > points[point_index].x || 
-        b.w < points[point_index].x || 
-        b.y > points[point_index].y || 
-        b.h < points[point_index].y) {
+    if (b.x > points[point_index].position.x ||
+      b.w < points[point_index].position.x ||
+      b.y > points[point_index].position.y ||
+      b.h < points[point_index].position.y) {
       return false;
     }
 
     if (this.points.length < this.capacity && this.nw == null) {
       this.points.push(point_index);
+      points[point_index].modified = false;
       return true;
     } else {
 
@@ -68,12 +98,12 @@ class QuadTree {
         this.subdivide();
       }
 
-      return this.nw.insertPoint(point_index) || 
-        this.ne.insertPoint(point_index) || 
-        this.sw.insertPoint(point_index) || 
+      return this.nw.insertPoint(point_index) ||
+        this.ne.insertPoint(point_index) ||
+        this.sw.insertPoint(point_index) ||
         this.se.insertPoint(point_index);
     }
-    
+
     return false;
   }
 
@@ -117,9 +147,9 @@ class QuadTree {
       this.boundary.show();
     }
   }
-  
+
   selectPointsForCircleArea(x, y, radius) {
-    
+
     if (this.nw != null) {
       return this.nw.selectPointsForCircleArea(x, y, radius).concat(
         this.ne.selectPointsForCircleArea(x, y, radius),
@@ -127,20 +157,20 @@ class QuadTree {
         this.se.selectPointsForCircleArea(x, y, radius)
       );
     } else {
-      if (this.checkIntersectionWithCircle(x, y, radius, this.boundary)) {    
+      if (this.checkIntersectionWithCircle(x, y, radius, this.boundary)) {
         var return_array = [];
         for (var i = 0; i < this.points.length; i++) {
-          if (Math.sqrt(Math.pow(points[this.points[i]].x - x, 2) + Math.pow(points[this.points[i]].y - y, 2)) <= radius) {
+          if (Math.sqrt(Math.pow(points[this.points[i]].position.x - x, 2) + Math.pow(points[this.points[i]].position.y - y, 2)) <= radius) {
             return_array.push(this.points[i]);
           }
         }
-        return return_array;   
+        return return_array;
       } else {
         return [];
       }
     }
   }
-  
+
   checkIntersectionWithCircle(x, y, radius, boundary) {
     if (boundary.w < x - radius || boundary.x > x + radius || boundary.y > y + radius || boundary.h < y - radius) {
       return false;
@@ -158,6 +188,8 @@ function setup() {
   createCanvas(600, 600);
   background(40);
   frameRate(40);
+  
+  gravity = createVector(0, 0.0002)
 
   slider = createSlider(2, 2000, 50, 5);
   slider.position(10, 50);
@@ -182,7 +214,7 @@ function draw() {
 
   qt.showBoundary();
   showAndMovePoints(qt);
-  
+
   // frameRate(0);
   noStroke();
   fill(255);
@@ -190,45 +222,47 @@ function draw() {
   text("particles count: " + slider.value(), 10, 40);
 }
 
-  function showAndMovePoints(qt) {
-    
-    var _old_points = points;
-  
-      for (var i = 0; i < slider.value(); i++) {
-        
-        var _point = points[i];
-        var pointsSelected = qt.selectPointsForCircleArea(_point.x, _point.y, 6);
-        
-        if (pointsSelected.length > 1) {
-          _point.show('orange');
-          _point.x_direction = Math.random() > 0.5 ? -1: 1;
-          _point.y_direction = Math.random() > 0.5 ? -1: 1;
-          _point.x += Math.random() * 1.3;
-          _point.y += Math.random() * 1.3;
-        } else {
-          _point.show('white');
+function showAndMovePoints(qt) {
+
+  var _old_points = points;
+
+  for (var i = 0; i < slider.value(); i++) {
+
+    var _point = points[i];
+    var pointsSelected = qt.selectPointsForCircleArea(_point.position.x, _point.position.y, _point.mass  );
+
+    var _intersected_points_count = pointsSelected.length;
+    if (_intersected_points_count > 1) {
+      for (var j = 0; j < _intersected_points_count; j++) {
+        if (points[pointsSelected[j]] != _point && points[pointsSelected[j]].modified == false) {
+          
+          var v1 = _point.velocity;
+          var v2 = points[pointsSelected[j]].velocity;
+          
+          
+          points[pointsSelected[j]].position.add(v2.mult(-1));
+
+          let v3 = p5.Vector.add(v1.mult(-1), v2.mult(-1));
+          let v4 = p5.Vector.add(v1.mult(-1), v2.mult(-1));
+
+          _point.velocity.add(v3);
+          points[pointsSelected[j]].velocity.add(v4);
+          
+          points[pointsSelected[j]].modified = true;
+          _point.modified = true;
         }
-        
-        var _point = points[i];
-
-        var new_x = _point.x + (_point.velocity * _point.x_direction);
-        var new_y = _point.y + (_point.velocity * _point.y_direction);
-
-        if (new_x >= window_size_x || new_x <= 0) {
-          _point.x_direction *= -1;
-          new_x *= _point.x_direction;
-        } else {
-          _point.x = new_x;
-        }
-
-        if (new_y >= window_size_y || new_y <= 0) {
-          _point.y_direction *= -1;
-          new_y *= _point.y_direction;
-        } else {
-          _point.y = new_y;
-        }
-
-        points[i] = _point;
       }
+      
+      _point.show('orange');
+      
+      
+    } else {
+      _point.show('white');
+    }
 
+    _point.move();
+
+    points[i] = _point;
   }
+
+}
