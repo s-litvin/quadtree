@@ -35,7 +35,7 @@ class Point {
     }
     
     var speed = this.velocity.mag();
-    if (speed > 4) {
+    if (speed >= 2) {
       this.velocity.normalize();
       this.velocity.mult(4);
     }
