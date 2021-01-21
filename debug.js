@@ -1,4 +1,5 @@
-import { QuadTree } from './capacity_quadtree.js';
+// import { QuadTree } from './capacity_quadtree.js';
+import { QuadTree } from './level_quadtree.js';
 
 var found_points = [];
 
