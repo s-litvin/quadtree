@@ -94,7 +94,7 @@ class QuadTree {
       return true;
     } else {
 
-      if (this.nw == null) {
+      if (this.nw == null && this.boundary.w - this.boundary.x > 4) {
         this.subdivide();
       }
 
