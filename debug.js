@@ -43,30 +43,53 @@ class Boundary {
 
 const window_size_x = 100;
 const window_size_y = 100;
-
 const points_count_limit = 20000;
-
+const total_cycles = 1;
 const boundary = new Boundary(0, 0, window_size_x, window_size_y);
 
-const tree = new QuadTree(boundary);
-const points = [];
+let timeAccumulator = 0;
+let points = [];
 
-for (let i = 0; i < points_count_limit; i++) {
-  const point = new Point(
-    Math.floor(Math.random() * window_size_x),
-    Math.floor(Math.random() * window_size_y)
-  );
-  points.push(point);
-  tree.insert(point);
+for (let cycle = 0; cycle < total_cycles; cycle++) {
+	let startTimer = performance.now();
+
+	const tree = new QuadTree(boundary);
+	points = [];
+	
+	wx = 0;
+	wy = 0;
+	for (let i = 0; i < points_count_limit; i++) {
+	
+	  const point = new Point(wx, wy);
+	  
+	  points.push(point);
+	  tree.insert(point);
+	  
+		if (wx < window_size_x) {
+			wx++;
+		} else {
+			wx = 0;
+		}
+		
+		if (wy < window_size_y) {
+			wy++;
+		} else {
+			wy = 0;
+		}
+	}
+
+	for (let i = 0; i < points_count_limit; i++) {
+	  const pointsSelected = tree.findByRadius(points[i], 5);
+
+	  if (pointsSelected.length > 1) {
+		points[i].show(pointsSelected);
+	  }
+	}
+
+	let stopTimer = performance.now();
+	timeAvg += stopTimer - startTimer;
 }
 
-for (let i = 0; i < points_count_limit; i++) {
-  const pointsSelected = tree.findByRadius(points[i], 5);
-
-  if (pointsSelected.length > 1) {
-    points[i].show(pointsSelected);
-  }
-}
-
-console.log(performance.now(), '-> --end');
+console.log('Cycle time (ms): ', timeAccumulator / total_cycles);
+console.log(points);
 console.log(found_points);
