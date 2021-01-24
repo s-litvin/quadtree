@@ -5,75 +5,95 @@
 //   y2: number;
 //   xMid?: number;
 //   yMid?: number;
-//   halfWidth?: number;
-//   halfHeight?: number;
+//   half?: number;
 // }
 
 class QuadTree {
 
-  // nodes: QuadTree[];
+  // bound: Rect;
   // count: number = 0;
+  // map: QuadTree[][];
+  // parent: QuadTree;
+  // protected _level: number;
+  // protected _nodes: QuadTree[];
   // protected _objects: WorldObject[];
+  // protected _sector: number
 
-  constructor(
-    bound, //: Rect,
-    levels = 5, //: number = 5,
-    parent //?: QuadTree
+  initialize(
+    size //: number,
   ) {
+    let binary = 2;
+    let level = -2;
+    while (binary < size) {
+      ++level;
+      binary *= 2;
+    }
+    const bound = { x1: 0, y1: 0, x2: binary, y2: binary };
+    this.map = [];
+    this._initialize(bound, level, this.map);
+    const sector = this.map[0][0].bound;
+    this._sector = sector.half * 2;
+  }
+
+  _initialize(
+    bound, //: Rect,
+    level, //: number,
+    map, //: QuadTree[][],
+    parent //?: QuadTree
+  ) { // : QuadTree
     this.count = 0;
     this.bound = bound;
-    this.levels = levels;
+    this._level = level;
     this.parent = parent;
 
     bound.xMid = (bound.x1 + bound.x2) * 0.5;
     bound.yMid = (bound.y1 + bound.y2) * 0.5;
-    bound.halfWidth = (bound.x2 - bound.x1) * 0.5;
-    bound.halfHeight = (bound.y2 - bound.y1) * 0.5;
+    const size = bound.x2 - bound.x1;
+    bound.half = size * 0.5;
 
-    if (this.levels) {
-      this._split();
+    if (this._level > 0) {
+      this._split(map);
     } else {
       this._objects = [];
+      const column = this.bound.x1 / size;
+      const row = this.bound.y1 / size;
+      map[column] = map[column] || [];
+      map[column][row] = this;
     }
+
+    return this;
+  }
+
+  _split(
+    map // QuadTree[][]
+  ) {
+    const level = this._level - 1;
+    const { x1, y1, x2, y2, xMid, yMid } = this.bound;
+
+    this._nodes = [
+      new QuadTree()._initialize({ x1: x1, y1: y1, x2: xMid, y2: yMid }, level, map, this),
+      new QuadTree()._initialize({ x1: xMid, y1: y1, x2: x2, y2: yMid }, level, map, this),
+      new QuadTree()._initialize({ x1: x1, y1: yMid, x2: xMid, y2: y2 }, level, map, this),
+      new QuadTree()._initialize({ x1: xMid, y1: yMid, x2: x2, y2: y2 }, level, map, this)
+    ];
   }
 
   insert(
     object //: WorldObject
-  ) { //: boolean
-    ++this.count;
-
-    if (!this.nodes) {
-      this._objects.push(object);
-      return true;
-    }
-
-    if (object.x < this.bound.xMid) {
-      if (object.y < this.bound.yMid) {
-        this.nodes[0].insert(object)
-      } else {
-        this.nodes[2].insert(object)
-      }
-    } else {
-      if (object.y < this.bound.yMid) {
-        this.nodes[1].insert(object)
-      } else {
-        this.nodes[3].insert(object)
-      }
-    }
-
-    return true;
+  ) {
+    const column = Math.floor(object.x / this._sector);
+    const row = Math.floor(object.y / this._sector);
+    this.map[column][row].add(object);
   }
 
-  _split() {
-    const levels = this.levels - 1;
-    const { x1, y1, x2, y2, xMid, yMid } = this.bound;
-
-    this.nodes = [
-      new QuadTree({ x1: x1, y1: y1, x2: xMid, y2: yMid }, levels, this),
-      new QuadTree({ x1: xMid, y1: y1, x2: x2, y2: yMid }, levels, this),
-      new QuadTree({ x1: x1, y1: yMid, x2: xMid, y2: y2 }, levels, this),
-      new QuadTree({ x1: xMid, y1: yMid, x2: x2, y2: y2 }, levels, this)
-    ];
+  add(
+    object //: WorldObject
+  ) {
+    this._objects.push(object);
+    let parent = this; //: QuadTree
+    do {
+      ++parent.count;
+    } while (parent = parent.parent);
   }
 
   findByRadius(
@@ -94,32 +114,24 @@ class QuadTree {
       return;
     }
 
-    const { xMid, yMid, halfWidth, halfHeight } = this.bound;
-    const lengthX = Math.abs(xMid - point.x);
-    if (lengthX > halfWidth + radius) {
-      return;
-    }
-    const lengthY = Math.abs(yMid - point.y);
-    if (lengthY > halfHeight + radius) {
-      return;
-    }
-
-    if (lengthX < radius - halfWidth * 1.41
-      && lengthY < radius - halfHeight * 1.41
+    const { xMid, yMid, half } = this.bound;
+    const length = half + radius;
+    if (Math.abs(xMid - point.x) > length
+      || Math.abs(yMid - point.y) > length
     ) {
-      this.get_objects(result);
       return;
     }
 
-    if (this.nodes) {
-      for (const node of this.nodes) {
-        node.find_by_radius(point, radius, result);
-      }
+    if (this._level > 0) {
+      this._nodes[0].find_by_radius(point, radius, result);
+      this._nodes[1].find_by_radius(point, radius, result);
+      this._nodes[2].find_by_radius(point, radius, result);
+      this._nodes[3].find_by_radius(point, radius, result);
       return;
     }
 
     for (const object of this._objects) {
-      if (this.lengthTo(point, object) <= radius) {
+      if (this.lengthTo(object, point) <= radius) {
         result.push(object);
       }
     }
@@ -138,13 +150,14 @@ class QuadTree {
     if (!this.count) {
       return;
     }
-    if (!this.nodes) {
-      result.push(...this._objects);
+    if (this._level > 0) {
+      this._nodes[0].get_objects(result);
+      this._nodes[1].get_objects(result);
+      this._nodes[2].get_objects(result);
+      this._nodes[3].get_objects(result);
       return;
     }
-    for (const node of this.nodes) {
-      node.get_objects(result);
-    }
+    result.push(...this._objects);
   }
 
   lengthTo(
@@ -153,8 +166,19 @@ class QuadTree {
   ) { //: number
     const qX = (point1.x - point2.x) ** 2;
     const qY = (point1.y - point2.y) ** 2;
-    const qZ = (point1.z - point2.z) ** 2;
-    return Math.sqrt(qX + qY + qZ);
+    return Math.sqrt(qX + qY);
+  }
+
+  clear() {
+    this.count = 0;
+    if (this._level > 0) {
+      this._nodes[0].clear();
+      this._nodes[1].clear();
+      this._nodes[2].clear();
+      this._nodes[3].clear();
+    } else {
+      this._objects = [];
+    }
   }
 
 }
