@@ -1,31 +1,13 @@
+console.info('Start');
+
 // import { QuadTree } from './capacity_quadtree.js';
 import { QuadTree } from './level_quadtree.js';
-
-var found_points = [];
 
 class Point {
 
   constructor(x, y) {
     this.x = x;
     this.y = y;
-  }
-
-  show(pointsSelected) {
-
-    let _points_full = [];
-    for (let i = 0; i < pointsSelected.length; i++) {
-      if (pointsSelected[i].x != this.x && pointsSelected[i].y != this.y) {
-        _points_full.push([pointsSelected[i].x, pointsSelected[i].y]);
-      }
-    }
-
-    if (_points_full.length > 0) {
-      found_points.push({
-        'point': [this.x, this.y],
-        'neighbours': _points_full
-      });
-    }
-
   }
 
 }
@@ -41,55 +23,63 @@ class Boundary {
 
 }
 
-const window_size_x = 100;
-const window_size_y = 100;
-const points_count_limit = 20000;
-const total_cycles = 1;
-const boundary = new Boundary(0, 0, window_size_x, window_size_y);
+const size = 1000;
+const tree = new QuadTree;
+tree.initialize(size);
 
-let timeAccumulator = 0;
-let points = [];
+const count = 1000;
+const objects = [];
+const ratio = size / count;
 
-for (let cycle = 0; cycle < total_cycles; cycle++) {
-	let startTimer = performance.now();
+wx = 0;
+wy = 0;  
 
-	const tree = new QuadTree(boundary);
-	points = [];
-	
-	wx = 0;
-	wy = 0;
-	for (let i = 0; i < points_count_limit; i++) {
-	
-	  const point = new Point(wx, wy);
-	  
-	  points.push(point);
-	  tree.insert(point);
-	  
-		if (wx < window_size_x) {
-			wx++;
-		} else {
-			wx = 0;
-		}
-		
-		if (wy < window_size_y) {
-			wy++;
-		} else {
-			wy = 0;
-		}
-	}
-
-	for (let i = 0; i < points_count_limit; i++) {
-	  const pointsSelected = tree.findByRadius(points[i], 5);
-
-	  if (pointsSelected.length > 1) {
-		points[i].show(pointsSelected);
-	  }
-	}
-
-	let stopTimer = performance.now();
-	timeAvg += stopTimer - startTimer;
+for (let i = 0; i < count; i++) {
+  const point = new Point(wx, wy);
+  objects.push(point);
+  tree.insert(point);
+  
+  wx =wx < window_size_x ? wx + 1 : 0;
+  wy =wy < window_size_y ? wy + 1 : 0;
 }
 
-console.log('Cycle time (ms): ', timeAccumulator / total_cycles);
-console.log(points);
-console.log(found_points);
+const point = new Point(50, 50);
+const radius = 13;
+
+function test() {
+  const result = tree.findByRadius(point, radius);
+  if (result.length == 0) {
+    console.error(result);
+  }
+
+  for (const target of result) {
+    target.__hit = true;
+  }
+
+  for (const object of objects) {
+    const lengthTo = tree.lengthTo(object, point);
+    const inner = lengthTo <= radius;
+    const hit = object.__hit;
+    if ((inner && !hit) || (!inner && hit)) {
+      console.error('Failed', object, lengthTo, radius);
+      console.groupEnd();
+      return;
+    }
+  }
+  console.info('Successful');
+
+  let time = Infinity;
+  for (let i = 0; i < 1000; i++) {
+    const start = performance.now();
+    tree.clear();
+    for (const object of objects) {
+      tree.insert(object);
+    }
+    for (const object of objects) {
+      tree.findByRadius(object, radius);
+    }
+    time = Math.min(time, performance.now() - start);
+  }
+  console.info(time);
+}
+test();

@@ -11,8 +11,13 @@ class Boundary {
 
 class QuadTree {
 
-  constructor(boundary, capacity = 120) {
-    this.boundary = boundary;
+  initialize(size, capacity = 120) {
+    const bound = new Boundary(0, 0, size, size);
+    this._initialize(bound, capacity);
+  }
+
+  _initialize(bound, capacity) {
+    this.boundary = bound;
     this.capacity = capacity;
 
     this.nw = null;
@@ -21,6 +26,7 @@ class QuadTree {
     this.se = null;
 
     this.points = [];
+    return this;
   }
 
   insert(point) {
@@ -64,10 +70,10 @@ class QuadTree {
     var sw_boundary = new Boundary(x, y_mid, x_mid, h);
     var se_boundary = new Boundary(x_mid, y_mid, w, h);
 
-    this.nw = new QuadTree(nw_boundary, this.capacity);
-    this.ne = new QuadTree(ne_boundary, this.capacity);
-    this.sw = new QuadTree(sw_boundary, this.capacity);
-    this.se = new QuadTree(se_boundary, this.capacity);
+    this.nw = new QuadTree()._initialize(nw_boundary, this.capacity);
+    this.ne = new QuadTree()._initialize(ne_boundary, this.capacity);
+    this.sw = new QuadTree()._initialize(sw_boundary, this.capacity);
+    this.se = new QuadTree()._initialize(se_boundary, this.capacity);
 
     for (var i = 0; i < this.points.length; i++) {
       this.nw.insert(this.points[i]) ||
@@ -90,7 +96,7 @@ class QuadTree {
       if (this._checkIntersectionWithCircle(point, radius, this.boundary)) {
         var return_array = [];
         for (var i = 0; i < this.points.length; i++) {
-          if (Math.sqrt(Math.pow(this.points[i].x - point.x, 2) + Math.pow(this.points[i].y - point.y, 2)) <= radius) {
+          if (this.lengthTo(this.points[i], point) <= radius) {
             return_array.push(this.points[i]);
           }
         }
@@ -111,6 +117,24 @@ class QuadTree {
     }
 
     return true;
+  }
+
+  lengthTo(
+    point1, //: Point,
+    point2 //: Point
+  ) { //: number
+    const qX = (point1.x - point2.x) ** 2;
+    const qY = (point1.y - point2.y) ** 2;
+    return Math.sqrt(qX + qY);
+  }
+
+  clear() {
+    this.nw = null;
+    this.ne = null;
+    this.sw = null;
+    this.se = null;
+
+    this.points = [];
   }
 
 }
