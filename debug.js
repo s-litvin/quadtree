@@ -31,13 +31,16 @@ const count = 1000;
 const objects = [];
 const ratio = size / count;
 
+wx = 0;
+wy = 0;  
+
 for (let i = 0; i < count; i++) {
-  const point = new Point(
-    Math.floor(ratio * i),
-    Math.floor(ratio * i)
-  );
+  const point = new Point(wx, wy);
   objects.push(point);
   tree.insert(point);
+  
+  wx =wx < window_size_x ? wx + 1 : 0;
+  wy =wy < window_size_y ? wy + 1 : 0;
 }
 
 const point = new Point(50, 50);

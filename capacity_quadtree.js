@@ -39,7 +39,7 @@ class QuadTree {
       return false;
     }
 
-    if (this.points.length < this.capacity && this.nw == null) {
+    if (b.x2 - b.x1 < 14  || (this.points.length < this.capacity && this.nw == null)) {
       this.points.push(point);
       return true;
     } else {
