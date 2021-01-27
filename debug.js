@@ -12,13 +12,10 @@ class Point {
 
 }
 
-class Boundary {
+class DisplayObject {
 
-  constructor(x, y, w, h) {
-    this.x1 = x;
-    this.y1 = y;
-    this.x2 = w;
-    this.y2 = h;
+  constructor(x, y) {
+    this.position = new Point(x, y);
   }
 
 }
@@ -35,9 +32,9 @@ let wx = 0;
 let wy = 0;
 
 for (let i = 0; i < count; i++) {
-  const point = new Point(wx, wy);
-  objects.push(point);
-  tree.insert(point);
+  const object = new DisplayObject(wx, wy);
+  objects.push(object);
+  tree.insert(object);
 
   wx = wx < size ? wx + 1 : 0;
   wy = wy < size ? wy + 1 : 0;
@@ -66,7 +63,7 @@ function test() {
   }
 
   for (const object of objects) {
-    const distance = lengthTo(object, point);
+    const distance = lengthTo(object.position, point);
     const inner = distance <= radius;
     const hit = object.__hit;
     if ((inner && !hit) || (!inner && hit)) {
@@ -78,14 +75,14 @@ function test() {
   console.info('Successful');
 
   let time = Infinity;
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 100; i++) {
     const start = performance.now();
     tree.clear();
     for (const object of objects) {
       tree.insert(object);
     }
     for (const object of objects) {
-      tree.findByRadius(object, radius);
+      tree.findByRadius(object.position, radius);
     }
     time = Math.min(time, performance.now() - start);
   }

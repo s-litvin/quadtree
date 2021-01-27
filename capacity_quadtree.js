@@ -1,13 +1,4 @@
-class Boundary {
-
-  constructor(x, y, w, h) {
-    this.x1 = x;
-    this.y1 = y;
-    this.x2 = w;
-    this.y2 = h;
-  }
-
-}
+import { Boundary } from './boundary.js';
 
 class QuadTree {
 
@@ -29,28 +20,30 @@ class QuadTree {
     return this;
   }
 
-  insert(point) {
+  insert(object) {
     var b = this.boundary;
 
-    if (b.x1 > point.x ||
-      b.x2 < point.x ||
-      b.y1 > point.y ||
-      b.y2 < point.y) {
+    if (b.x1 > object.position.x ||
+      b.x2 < object.position.x ||
+      b.y1 > object.position.y ||
+      b.y2 < object.position.y) {
       return false;
     }
 
-    if (b.x2 - b.x1 < 14  || (this.points.length < this.capacity && this.nw == null)) {
-      this.points.push(point);
+    if (b.x2 - b.x1 < 8  ||
+      (this.points.length < this.capacity && this.nw == null)
+    ) {
+      this.points.push(object);
       return true;
     } else {
       if (this.nw == null) {
         this.subdivide();
       }
 
-      return this.nw.insert(point) ||
-        this.ne.insert(point) ||
-        this.sw.insert(point) ||
-        this.se.insert(point);
+      return this.nw.insert(object) ||
+        this.ne.insert(object) ||
+        this.sw.insert(object) ||
+        this.se.insert(object);
     }
 
     return false;
@@ -87,16 +80,17 @@ class QuadTree {
 
   findByRadius(point, radius) {
     if (this.nw != null) {
-      return this.nw.findByRadius(point, radius).concat(
-        this.ne.findByRadius(point, radius),
-        this.sw.findByRadius(point, radius),
-        this.se.findByRadius(point, radius)
-      );
+      return [
+        ...this.nw.findByRadius(point, radius),
+        ...this.ne.findByRadius(point, radius),
+        ...this.sw.findByRadius(point, radius),
+        ...this.se.findByRadius(point, radius)
+      ];
     } else {
       if (this._checkIntersectionWithCircle(point, radius, this.boundary)) {
         var return_array = [];
         for (var i = 0; i < this.points.length; i++) {
-          if (this.lengthTo(this.points[i], point) <= radius) {
+          if (this.lengthTo(this.points[i].position, point) <= radius) {
             return_array.push(this.points[i]);
           }
         }
@@ -120,9 +114,9 @@ class QuadTree {
   }
 
   lengthTo(
-    point1, //: Point,
-    point2 //: Point
-  ) { //: number
+    point1,
+    point2
+  ) {
     const qX = (point1.x - point2.x) ** 2;
     const qY = (point1.y - point2.y) ** 2;
     return Math.sqrt(qX + qY);
@@ -135,6 +129,17 @@ class QuadTree {
     this.se = null;
 
     this.points = [];
+  }
+
+  showBoundary() {
+    if (this.nw != null) {
+      this.nw.showBoundary();
+      this.ne.showBoundary();
+      this.sw.showBoundary();
+      this.se.showBoundary();
+    } else {
+      this.boundary.show();
+    }
   }
 
 }

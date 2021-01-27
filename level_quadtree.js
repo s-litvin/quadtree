@@ -1,4 +1,6 @@
-// interface Rect {
+import { Boundary } from './boundary.js';
+
+// interface Boundary {
 //   x1: number;
 //   y1: number;
 //   x2: number;
@@ -28,11 +30,12 @@ class QuadTree {
       ++level;
       binary *= 2;
     }
-    const bound = { x1: 0, y1: 0, x2: binary, y2: binary };
+    const bound = new Boundary(0, 0, binary, binary);
     this.map = [];
     this._initialize(bound, level, this.map);
     const sector = this.map[0][0].bound;
     this._sector = sector.half * 2;
+    this.map_max = this.map.length - 1;
   }
 
   _initialize(
@@ -71,18 +74,19 @@ class QuadTree {
     const { x1, y1, x2, y2, xMid, yMid } = this.bound;
 
     this._nodes = [
-      new QuadTree()._initialize({ x1: x1, y1: y1, x2: xMid, y2: yMid }, level, map, this),
-      new QuadTree()._initialize({ x1: xMid, y1: y1, x2: x2, y2: yMid }, level, map, this),
-      new QuadTree()._initialize({ x1: x1, y1: yMid, x2: xMid, y2: y2 }, level, map, this),
-      new QuadTree()._initialize({ x1: xMid, y1: yMid, x2: x2, y2: y2 }, level, map, this)
+      new QuadTree()._initialize(new Boundary(x1, y1, xMid, yMid), level, map, this),
+      new QuadTree()._initialize(new Boundary(xMid, y1, x2, yMid), level, map, this),
+      new QuadTree()._initialize(new Boundary(x1, yMid, xMid, y2), level, map, this),
+      new QuadTree()._initialize(new Boundary(xMid, yMid, x2, y2), level, map, this)
     ];
   }
 
   insert(
     object //: WorldObject
   ) {
-    const column = Math.floor(object.x / this._sector);
-    const row = Math.floor(object.y / this._sector);
+    const point = object.position;
+    let column = Math.floor(point.x / this._sector);
+    let row = Math.floor(point.y / this._sector);
     this.map[column][row].add(object);
   }
 
@@ -131,7 +135,7 @@ class QuadTree {
     }
 
     for (const object of this._objects) {
-      if (this.lengthTo(object, point) <= radius) {
+      if (this.lengthTo(object.position, point) <= radius) {
         result.push(object);
       }
     }
@@ -178,6 +182,17 @@ class QuadTree {
       this._nodes[3].clear();
     } else {
       this._objects = [];
+    }
+  }
+
+  showBoundary() {
+    if (this._level > 0) {
+      this._nodes[0].showBoundary();
+      this._nodes[1].showBoundary();
+      this._nodes[2].showBoundary();
+      this._nodes[3].showBoundary();
+    } else {
+      this.bound.show();
     }
   }
 
