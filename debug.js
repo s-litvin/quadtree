@@ -38,18 +38,27 @@ for (let i = 0; i < count; i++) {
   const point = new Point(wx, wy);
   objects.push(point);
   tree.insert(point);
-  
+
   wx = wx < size ? wx + 1 : 0;
   wy = wy < size ? wy + 1 : 0;
 }
 
-const point = new Point(50, 50);
 const radius = 13;
+const point = new Point(radius, radius);
+
+function lengthTo(
+  point1, //: Point,
+  point2 //: Point
+) { //: number
+  const qX = (point1.x - point2.x) ** 2;
+  const qY = (point1.y - point2.y) ** 2;
+  return Math.sqrt(qX + qY);
+}
 
 function test() {
   const result = tree.findByRadius(point, radius);
   if (result.length == 0) {
-    console.error(result);
+    console.error({ point, radius });
   }
 
   for (const target of result) {
@@ -57,11 +66,11 @@ function test() {
   }
 
   for (const object of objects) {
-    const lengthTo = tree.lengthTo(object, point);
-    const inner = lengthTo <= radius;
+    const distance = lengthTo(object, point);
+    const inner = distance <= radius;
     const hit = object.__hit;
     if ((inner && !hit) || (!inner && hit)) {
-      console.error('Failed', object, lengthTo, radius);
+      console.error('Failed', { object, distance, radius });
       console.groupEnd();
       return;
     }
