@@ -88,7 +88,7 @@ class QuadTree {
       return false;
     }
 
-    if (this.points.length < this.capacity && this.nw == null) {
+    if (b.x2 - b.x1 < 10  || (this.points.length < this.capacity && this.nw == null)) {
       this.points.push(point_index);
       points[point_index].modified = false;
       return true;
@@ -191,9 +191,13 @@ function setup() {
   
   gravity = createVector(0, 0.0002)
 
-  slider = createSlider(2, 2000, 50, 5);
+  slider = createSlider(2, 2000, 100, 5);
   slider.position(10, 50);
   slider.style('width', '80px');
+
+  sliderCapacity = createSlider(1, 250, 8, 1);
+  sliderCapacity.position(10, 80);
+  sliderCapacity.style('width', '80px');
 
   boundary = new Boundary(0, 0, window_size_x, window_size_y);
 
@@ -205,7 +209,7 @@ function setup() {
 function draw() {
   background(40);
 
-  var qt = new QuadTree(boundary, 4);
+  var qt = new QuadTree(boundary, sliderCapacity.value());
 
   qt.showBoundary();
   for (var i = 0; i < slider.value(); i++) {
@@ -220,6 +224,7 @@ function draw() {
   fill(255);
   text("framerate: " + Math.floor(frameRate()), 10, 20);
   text("particles count: " + slider.value(), 10, 40);
+  text("tree capacity: " + sliderCapacity.value(), 10, 80);
 }
 
 function showAndMovePoints(qt) {

@@ -23,7 +23,7 @@ class Boundary {
 
 }
 
-const size = 1000;
+const size = 100;
 const tree = new QuadTree;
 tree.initialize(size);
 
@@ -31,16 +31,16 @@ const count = 1000;
 const objects = [];
 const ratio = size / count;
 
-wx = 0;
-wy = 0;  
+let wx = 0;
+let wy = 0;
 
 for (let i = 0; i < count; i++) {
   const point = new Point(wx, wy);
   objects.push(point);
   tree.insert(point);
   
-  wx =wx < window_size_x ? wx + 1 : 0;
-  wy =wy < window_size_y ? wy + 1 : 0;
+  wx = wx < size ? wx + 1 : 0;
+  wy = wy < size ? wy + 1 : 0;
 }
 
 const point = new Point(50, 50);
