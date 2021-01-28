@@ -19,6 +19,8 @@ class QuadTree {
   // protected _level: number;
   // protected _nodes: QuadTree[];
   // protected _objects: WorldObject[];
+  // protected static_count: number = 0;
+  // protected static_objects: WorldObject[];
   // protected _sector: number
 
   initialize(
@@ -35,7 +37,6 @@ class QuadTree {
     this._initialize(bound, level, this.map);
     const sector = this.map[0][0].bound;
     this._sector = sector.half * 2;
-    this.map_max = this.map.length - 1;
   }
 
   _initialize(
@@ -45,6 +46,7 @@ class QuadTree {
     parent //?: QuadTree
   ) { // : QuadTree
     this.count = 0;
+    this.static_count = 0;
     this.bound = bound;
     this._level = level;
     this.parent = parent;
@@ -58,6 +60,7 @@ class QuadTree {
       this._split(map);
     } else {
       this._objects = [];
+      this.static_objects = [];
       const column = this.bound.x1 / size;
       const row = this.bound.y1 / size;
       map[column] = map[column] || [];
@@ -84,10 +87,17 @@ class QuadTree {
   insert(
     object //: WorldObject
   ) {
-    const point = object.position;
-    let column = Math.floor(point.x / this._sector);
-    let row = Math.floor(point.y / this._sector);
+    let column = Math.floor(object.position.x / this._sector);
+    let row = Math.floor(object.position.y / this._sector);
     this.map[column][row].add(object);
+  }
+
+  insertStatic(
+    object //: WorldObject
+  ) {
+    let column = Math.floor(object.position.x / this._sector);
+    let row = Math.floor(object.position.y / this._sector);
+    this.map[column][row].addStatic(object);
   }
 
   add(
@@ -97,6 +107,17 @@ class QuadTree {
     let parent = this; //: QuadTree
     do {
       ++parent.count;
+    } while (parent = parent.parent);
+  }
+
+  addStatic(
+    object //: WorldObject
+  ) {
+    this.static_objects.push(object);
+    let parent = this; //: QuadTree
+    do {
+      ++parent.count;
+      ++parent.static_count;
     } while (parent = parent.parent);
   }
 
@@ -139,6 +160,12 @@ class QuadTree {
         result.push(object);
       }
     }
+
+    for (const object of this.static_objects) {
+      if (this.lengthTo(object.position, point) <= radius) {
+        result.push(object);
+      }
+    }
   }
 
   getObjects(
@@ -161,7 +188,7 @@ class QuadTree {
       this._nodes[3].get_objects(result);
       return;
     }
-    result.push(...this._objects);
+    result.push(...this.static_objects, ...this._objects);
   }
 
   lengthTo(
@@ -174,7 +201,7 @@ class QuadTree {
   }
 
   clear() {
-    this.count = 0;
+    this.count = this.static_count;
     if (this._level > 0) {
       this._nodes[0].clear();
       this._nodes[1].clear();

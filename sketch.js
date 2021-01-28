@@ -10,19 +10,14 @@ class DisplayObject {
 
   constructor(x, y) {
     this.position = createVector(x, y);
-    this.velocity = createVector(random(-2, 2), random(-2, 2));
-    this.acceleration = createVector(0, 0);
     this.mass = random(3, 13);
+    this.acceleration = createVector(0, 0);
+    this.velocity = createVector(random(-2, 2), random(-2, 2));
     this.modified = false;
   }
 
-  applyForce(forceVector) {
-    var force = p5.Vector.div(forceVector, this.mass);
-    this.acceleration.add(force);
-  }
-
   move() {
-    this.applyForce(gravity);
+    this._applyForce(gravity);
 
     const velocity = this.velocity.add(this.acceleration);
     this.position.add(velocity);
@@ -45,6 +40,15 @@ class DisplayObject {
       this.position.y = 0;
     }
 
+    this.updateVelocity();
+  }
+
+  _applyForce(forceVector) {
+    var force = p5.Vector.div(forceVector, this.mass);
+    this.acceleration.add(force);
+  }
+
+  updateVelocity() {
     var speed = this.velocity.mag();
     if (speed >= 2) {
       this.velocity.normalize();
@@ -60,6 +64,7 @@ class DisplayObject {
 }
 
 var selected_boundary;
+var static_objects = [];
 var objects = [];
 var tree;
 var slider;
@@ -69,7 +74,6 @@ var checkboxTree;
 function setup() {
   createCanvas(window_size_x, window_size_y);
   background(40);
-  frameRate(40);
 
   gravity = createVector(0, 0.0002)
 
@@ -85,15 +89,24 @@ function setup() {
   checkboxTree.position(10, 110);
   checkboxTree.style('color', 'white');
 
-  for (var i = 0; i < 2000; i++) {
-    const x = Math.floor(random(0, window_size_x));
-    const y = Math.floor(random(0, window_size_y));
-    objects.push(new DisplayObject(x, y));
-  }
-
   tree = new QuadTree;
   const capacity = sliderCapacity.value();
   tree.initialize(Math.max(window_size_x, window_size_y), capacity);
+
+  for (var i = 0; i < 2000; i++) {
+    const x = Math.floor(random(0, window_size_x));
+    const y = Math.floor(random(0, window_size_y));
+    const object = new DisplayObject(x, y);
+    objects.push(object);
+  }
+
+  for (var i = 0; i < 50; i++) {
+    const x = Math.floor(random(0, window_size_x));
+    const y = Math.floor(random(0, window_size_y));
+    const object = new DisplayObject(x, y);
+    tree.insertStatic(object);
+    static_objects.push(object);
+  }
 }
 window.setup = setup;
 
@@ -120,35 +133,45 @@ function draw() {
 window.draw = draw;
 
 function showAndMovePoints() {
+  for (var i = 0; i < static_objects.length; i++) {
+    var _object = static_objects[i];
+    const color = _object.modified ? 'orange' : 'green';
+    _object.show(color);
+    _object.modified = false;
+    _object.updateVelocity();
+  }
+
   for (var i = 0; i < slider.value(); i++) {
     var _object = objects[i];
     var pointsSelected = tree.findByRadius(_object.position, _object.mass);
 
     var _intersected_points_count = pointsSelected.length;
-    if (_intersected_points_count > 1) {
-      for (var j = 0; j < _intersected_points_count; j++) {
-        if (pointsSelected[j] != _object &&
-          pointsSelected[j].modified == false
-        ) {
-          var v1 = _object.velocity;
-          var v2 = pointsSelected[j].velocity;
-          let v3 = p5.Vector.add(v1.mult(-1), v2.mult(-1));
-          let v4 = p5.Vector.add(v1.mult(-1), v2.mult(-1));
-
-          _object.velocity.add(v3);
-          pointsSelected[j].velocity.add(v4);
-
-          pointsSelected[j].modified = true;
-          _object.modified = true;
-        }
-      }
-
-      _object.move();
-      _object.show('orange');
-    } else {
+    if (_intersected_points_count == 1) {
       _object.move();
       _object.show('white');
+      continue;
     }
+
+    for (var j = 0; j < _intersected_points_count; j++) {
+      const selected = pointsSelected[j];
+      if (selected != _object &&
+        selected.modified == false
+      ) {
+        var v1 = _object.velocity;
+        var v2 = selected.velocity;
+        let v3 = p5.Vector.add(v1.mult(-1), v2.mult(-1));
+        let v4 = p5.Vector.add(v1.mult(-1), v2.mult(-1));
+
+        _object.velocity.add(v3);
+        selected.velocity.add(v4);
+
+        selected.modified = true;
+        _object.modified = true;
+      }
+    }
+
+    _object.move();
+    _object.show('orange');
   }
 
 }

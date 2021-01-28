@@ -26,6 +26,7 @@ tree.initialize(size);
 
 const count = 1000;
 const objects = [];
+const staticObjects = [];
 const ratio = size / count;
 
 let wx = 0;
@@ -33,8 +34,14 @@ let wy = 0;
 
 for (let i = 0; i < count; i++) {
   const object = new DisplayObject(wx, wy);
-  objects.push(object);
-  tree.insert(object);
+
+  if (i % 3 == 0) {
+    staticObjects.push(object);
+    tree.insertStatic(object);
+  } else {
+    objects.push(object);
+    tree.insert(object);
+  }
 
   wx = wx < size ? wx + 1 : 0;
   wy = wy < size ? wy + 1 : 0;

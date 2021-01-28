@@ -17,7 +17,13 @@ class QuadTree {
     this.se = null;
 
     this.points = [];
+    this.static_points = [];
     return this;
+  }
+
+  insertStatic(object) {
+    this.static_points.push(object);
+    this.insert(object);
   }
 
   insert(object) {
@@ -129,6 +135,11 @@ class QuadTree {
     this.se = null;
 
     this.points = [];
+
+    const length = this.static_points.length;
+    for (let i = 0; i < length; i++) {
+      this.insert(this.static_points[i]);
+    }
   }
 
   showBoundary() {
