@@ -186,13 +186,15 @@ class QuadTree {
   }
 
   showBoundary() {
+    if (!this.count) {
+      return;
+    }
+    this.bound.show();
     if (this._level > 0) {
       this._nodes[0].showBoundary();
       this._nodes[1].showBoundary();
       this._nodes[2].showBoundary();
       this._nodes[3].showBoundary();
-    } else {
-      this.bound.show();
     }
   }
 
