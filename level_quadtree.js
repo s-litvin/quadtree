@@ -1,4 +1,6 @@
-// interface Rect {
+import { Boundary } from './boundary.js';
+
+// interface Boundary {
 //   x1: number;
 //   y1: number;
 //   x2: number;
@@ -17,6 +19,8 @@ class QuadTree {
   // protected _level: number;
   // protected _nodes: QuadTree[];
   // protected _objects: WorldObject[];
+  // protected static_count: number = 0;
+  // protected static_objects: WorldObject[];
   // protected _sector: number
 
   initialize(
@@ -28,7 +32,7 @@ class QuadTree {
       ++level;
       binary *= 2;
     }
-    const bound = { x1: 0, y1: 0, x2: binary, y2: binary };
+    const bound = new Boundary(0, 0, binary, binary);
     this.map = [];
     this._initialize(bound, level, this.map);
     const sector = this.map[0][0].bound;
@@ -42,6 +46,7 @@ class QuadTree {
     parent //?: QuadTree
   ) { // : QuadTree
     this.count = 0;
+    this.static_count = 0;
     this.bound = bound;
     this._level = level;
     this.parent = parent;
@@ -55,6 +60,7 @@ class QuadTree {
       this._split(map);
     } else {
       this._objects = [];
+      this.static_objects = [];
       const column = this.bound.x1 / size;
       const row = this.bound.y1 / size;
       map[column] = map[column] || [];
@@ -71,19 +77,27 @@ class QuadTree {
     const { x1, y1, x2, y2, xMid, yMid } = this.bound;
 
     this._nodes = [
-      new QuadTree()._initialize({ x1: x1, y1: y1, x2: xMid, y2: yMid }, level, map, this),
-      new QuadTree()._initialize({ x1: xMid, y1: y1, x2: x2, y2: yMid }, level, map, this),
-      new QuadTree()._initialize({ x1: x1, y1: yMid, x2: xMid, y2: y2 }, level, map, this),
-      new QuadTree()._initialize({ x1: xMid, y1: yMid, x2: x2, y2: y2 }, level, map, this)
+      new QuadTree()._initialize(new Boundary(x1, y1, xMid, yMid), level, map, this),
+      new QuadTree()._initialize(new Boundary(xMid, y1, x2, yMid), level, map, this),
+      new QuadTree()._initialize(new Boundary(x1, yMid, xMid, y2), level, map, this),
+      new QuadTree()._initialize(new Boundary(xMid, yMid, x2, y2), level, map, this)
     ];
   }
 
   insert(
     object //: WorldObject
   ) {
-    const column = Math.floor(object.x / this._sector);
-    const row = Math.floor(object.y / this._sector);
+    let column = Math.floor(object.position.x / this._sector);
+    let row = Math.floor(object.position.y / this._sector);
     this.map[column][row].add(object);
+  }
+
+  insertStatic(
+    object //: WorldObject
+  ) {
+    let column = Math.floor(object.position.x / this._sector);
+    let row = Math.floor(object.position.y / this._sector);
+    this.map[column][row].addStatic(object);
   }
 
   add(
@@ -93,6 +107,17 @@ class QuadTree {
     let parent = this; //: QuadTree
     do {
       ++parent.count;
+    } while (parent = parent.parent);
+  }
+
+  addStatic(
+    object //: WorldObject
+  ) {
+    this.static_objects.push(object);
+    let parent = this; //: QuadTree
+    do {
+      ++parent.count;
+      ++parent.static_count;
     } while (parent = parent.parent);
   }
 
@@ -131,7 +156,13 @@ class QuadTree {
     }
 
     for (const object of this._objects) {
-      if (this.lengthTo(object, point) <= radius) {
+      if (this.lengthTo(object.position, point) <= radius) {
+        result.push(object);
+      }
+    }
+
+    for (const object of this.static_objects) {
+      if (this.lengthTo(object.position, point) <= radius) {
         result.push(object);
       }
     }
@@ -157,7 +188,7 @@ class QuadTree {
       this._nodes[3].get_objects(result);
       return;
     }
-    result.push(...this._objects);
+    result.push(...this.static_objects, ...this._objects);
   }
 
   lengthTo(
@@ -170,7 +201,7 @@ class QuadTree {
   }
 
   clear() {
-    this.count = 0;
+    this.count = this.static_count;
     if (this._level > 0) {
       this._nodes[0].clear();
       this._nodes[1].clear();
@@ -178,6 +209,19 @@ class QuadTree {
       this._nodes[3].clear();
     } else {
       this._objects = [];
+    }
+  }
+
+  showBoundary() {
+    if (!this.count) {
+      return;
+    }
+    this.bound.show();
+    if (this._level > 0) {
+      this._nodes[0].showBoundary();
+      this._nodes[1].showBoundary();
+      this._nodes[2].showBoundary();
+      this._nodes[3].showBoundary();
     }
   }
 
