@@ -191,7 +191,7 @@ function setup() {
   
   gravity = createVector(0, 0.0002)
 
-  slider = createSlider(2, 2000, 100, 5);
+  slider = createSlider(2, 8000, 100, 5);
   slider.position(10, 50);
   slider.style('width', '80px');
 
@@ -201,7 +201,7 @@ function setup() {
 
   boundary = new Boundary(0, 0, window_size_x, window_size_y);
 
-  for (var i = 0; i < 2000; i++) {
+  for (var i = 0; i < 8000; i++) {
     points.push(new Point(Math.floor(random(0, window_size_x)), Math.floor(random(0, window_size_y))));
   }
 }
