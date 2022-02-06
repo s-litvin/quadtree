@@ -1,10 +1,9 @@
-var window_size_x = 600;
-var window_size_y = 600;
+let window_size_x = 600;
+let window_size_y = 600;
 
-var points_count_limit = 2000;
-var points = [];
+let points = [];
 
-var gravity;
+let gravity;
 
 class Point {
 
@@ -17,7 +16,7 @@ class Point {
   }
 
   applyForce(forceVector) {
-    var f = p5.Vector.div(forceVector, this.mass);
+    let f = p5.Vector.div(forceVector, this.mass);
     this.acceleration.add(f);
   }
 
@@ -41,7 +40,7 @@ class Point {
       this.velocity.y *= -1;
     }
     
-    var speed = this.velocity.mag();
+    let speed = this.velocity.mag();
     if (speed >= 2) {
       this.velocity.normalize();
       this.velocity.mult(4);
@@ -86,7 +85,7 @@ class QuadTree {
   }
 
   insertPoint(point_index) {
-    var b = this.boundary;
+    let b = this.boundary;
 
     if (b.x > points[point_index].position.x ||
       b.w < points[point_index].position.x ||
@@ -115,25 +114,25 @@ class QuadTree {
   }
 
   subdivide() {
-    var b = this.boundary;
-    var x = b.x;
-    var y = b.y;
-    var w = b.w;
-    var h = b.h;
-    var x_mid = (x + w) / 2;
-    var y_mid = (y + h) / 2;
+    let b = this.boundary;
+    let x = b.x;
+    let y = b.y;
+    let w = b.w;
+    let h = b.h;
+    let x_mid = (x + w) / 2;
+    let y_mid = (y + h) / 2;
 
-    var nw_boundary = new Boundary(x, y, x_mid, y_mid);
-    var ne_boundary = new Boundary(x_mid, y, w, y_mid);
-    var sw_boundary = new Boundary(x, y_mid, x_mid, h);
-    var se_boundary = new Boundary(x_mid, y_mid, w, h);
+    let nw_boundary = new Boundary(x, y, x_mid, y_mid);
+    let ne_boundary = new Boundary(x_mid, y, w, y_mid);
+    let sw_boundary = new Boundary(x, y_mid, x_mid, h);
+    let se_boundary = new Boundary(x_mid, y_mid, w, h);
 
     this.nw = new QuadTree(nw_boundary, this.capacity);
     this.ne = new QuadTree(ne_boundary, this.capacity);
     this.sw = new QuadTree(sw_boundary, this.capacity);
     this.se = new QuadTree(se_boundary, this.capacity);
 
-    for (var i = 0; i < this.points.length; i++) {
+    for (let i = 0; i < this.points.length; i++) {
       this.nw.insertPoint(this.points[i]) ||
         this.ne.insertPoint(this.points[i]) ||
         this.sw.insertPoint(this.points[i]) ||
@@ -165,8 +164,8 @@ class QuadTree {
       );
     } else {
       if (this.checkIntersectionWithCircle(x, y, radius, this.boundary)) {
-        var return_array = [];
-        for (var i = 0; i < this.points.length; i++) {
+        let return_array = [];
+        for (let i = 0; i < this.points.length; i++) {
           if (Math.sqrt(Math.pow(points[this.points[i]].position.x - x, 2) + Math.pow(points[this.points[i]].position.y - y, 2)) <= radius) {
             return_array.push(this.points[i]);
           }
@@ -188,8 +187,8 @@ class QuadTree {
 
 }
 
-var boundary;
-var selected_boundary;
+let boundary;
+let selected_boundary;
 
 function setup() {
   createCanvas(600, 600);
@@ -208,7 +207,7 @@ function setup() {
 
   boundary = new Boundary(0, 0, window_size_x, window_size_y);
 
-  for (var i = 0; i < 8000; i++) {
+  for (let i = 0; i < 8000; i++) {
     points.push(new Point(Math.floor(random(0, window_size_x)), Math.floor(random(0, window_size_y))));
   }
 }
@@ -216,10 +215,10 @@ function setup() {
 function draw() {
   background(40);
 
-  var qt = new QuadTree(boundary, sliderCapacity.value());
+  let qt = new QuadTree(boundary, sliderCapacity.value());
 
   qt.showBoundary();
-  for (var i = 0; i < slider.value(); i++) {
+  for (let i = 0; i < slider.value(); i++) {
     qt.insertPoint(i);
   }
 
@@ -236,20 +235,20 @@ function draw() {
 
 function showAndMovePoints(qt) {
 
-  var _old_points = points;
+  let _old_points = points;
 
-  for (var i = 0; i < slider.value(); i++) {
+  for (let i = 0; i < slider.value(); i++) {
 
-    var _point = points[i];
-    var pointsSelected = qt.selectPointsForCircleArea(_point.position.x, _point.position.y, _point.mass  );
+    let _point = points[i];
+    let pointsSelected = qt.selectPointsForCircleArea(_point.position.x, _point.position.y, _point.mass  );
 
-    var _intersected_points_count = pointsSelected.length;
+    let _intersected_points_count = pointsSelected.length;
     if (_intersected_points_count > 1) {
-      for (var j = 0; j < _intersected_points_count; j++) {
+      for (let j = 0; j < _intersected_points_count; j++) {
         if (points[pointsSelected[j]] != _point && points[pointsSelected[j]].modified == false) {
           
-          var v1 = _point.velocity;
-          var v2 = points[pointsSelected[j]].velocity;
+          let v1 = _point.velocity;
+          let v2 = points[pointsSelected[j]].velocity;
           
           
           points[pointsSelected[j]].position.add(v2.mult(-1));
