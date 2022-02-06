@@ -194,9 +194,13 @@ function setup() {
   slider.position(10, 50);
   slider.style('width', '80px');
 
-  sliderCapacity = createSlider(1, 200, 8, 1);
+  sliderCapacity = createSlider(1, 20, 2, 1);
   sliderCapacity.position(10, 80);
   sliderCapacity.style('width', '80px');
+
+  sliderGravity = createSlider(1, 200, 2, 1);
+  sliderGravity.position(10, 110);
+  sliderGravity.style('width', '80px');
 
   boundary = new Boundary(0, 0, window_size_x, window_size_y);
 
@@ -208,6 +212,7 @@ function setup() {
 function draw() {
   background(40);
 
+  gravity = createVector(0, sliderGravity.value() / 10000)
   let qt = new QuadTree(boundary, sliderCapacity.value());
 
   qt.showBoundary();
@@ -224,6 +229,7 @@ function draw() {
   text("framerate: " + Math.floor(frameRate()), 10, 20);
   text("particles count: " + slider.value(), 10, 40);
   text("tree capacity: " + sliderCapacity.value(), 10, 80);
+  text("gravity: " + sliderGravity.value() / 10000, 10, 110);
 }
 
 function showAndMovePoints(qt) {
