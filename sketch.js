@@ -27,10 +27,17 @@ class Point {
     
     this.position.add(this.velocity.add(this.acceleration));
 
-    if (this.position.x >= window_size_x - 3 || this.position.x <= 3) {
+    if (this.position.x >= window_size_x - this.mass) {
+      this.position.x = window_size_x - this.mass
       this.velocity.x *= -1;
-    }
-    if (this.position.y >= window_size_y - 3 || this.position.y <= 3) {
+    } else if (this.position.x <= this.mass) {
+      this.position.x = this.mass
+      this.velocity.x *= -1;
+    } else if (this.position.y >= window_size_y - this.mass) {
+      this.position.y = window_size_y - this.mass;
+      this.velocity.y *= -1;
+    } else if (this.position.y <= this.mass) {
+      this.position.y = this.mass;
       this.velocity.y *= -1;
     }
     
@@ -195,7 +202,7 @@ function setup() {
   slider.position(10, 50);
   slider.style('width', '80px');
 
-  sliderCapacity = createSlider(1, 250, 8, 1);
+  sliderCapacity = createSlider(1, 200, 8, 1);
   sliderCapacity.position(10, 80);
   sliderCapacity.style('width', '80px');
 
