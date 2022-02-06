@@ -97,20 +97,18 @@ class QuadTree {
     if (b.x2 - b.x1 < 10  || (this.points.length < this.capacity && this.nw == null)) {
       this.points.push(point_index);
       points[point_index].modified = false;
+
       return true;
-    } else {
-
-      if (this.nw == null && this.boundary.w - this.boundary.x > 4) {
-        this.subdivide();
-      }
-
-      return this.nw.insertPoint(point_index) ||
-        this.ne.insertPoint(point_index) ||
-        this.sw.insertPoint(point_index) ||
-        this.se.insertPoint(point_index);
     }
 
-    return false;
+    if (this.nw == null) {
+      this.subdivide();
+    }
+
+    return this.nw.insertPoint(point_index) ||
+      this.ne.insertPoint(point_index) ||
+      this.sw.insertPoint(point_index) ||
+      this.se.insertPoint(point_index);
   }
 
   subdivide() {
@@ -178,17 +176,12 @@ class QuadTree {
   }
 
   checkIntersectionWithCircle(x, y, radius, boundary) {
-    if (boundary.w < x - radius || boundary.x > x + radius || boundary.y > y + radius || boundary.h < y - radius) {
-      return false;
-    }
-
-    return true;
+    return !(boundary.w < x - radius || boundary.x > x + radius || boundary.y > y + radius || boundary.h < y - radius);
   }
 
 }
 
 let boundary;
-let selected_boundary;
 
 function setup() {
   createCanvas(600, 600);
@@ -235,8 +228,6 @@ function draw() {
 
 function showAndMovePoints(qt) {
 
-  let _old_points = points;
-
   for (let i = 0; i < slider.value(); i++) {
 
     let _point = points[i];
@@ -245,7 +236,7 @@ function showAndMovePoints(qt) {
     let _intersected_points_count = pointsSelected.length;
     if (_intersected_points_count > 1) {
       for (let j = 0; j < _intersected_points_count; j++) {
-        if (points[pointsSelected[j]] != _point && points[pointsSelected[j]].modified == false) {
+        if (points[pointsSelected[j]] !== _point && points[pointsSelected[j]].modified === false) {
           
           let v1 = _point.velocity;
           let v2 = points[pointsSelected[j]].velocity;
